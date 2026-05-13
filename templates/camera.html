@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Translator Camera</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        body {
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: #111827;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .title-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .title h1 {
+            font-size: 42px;
+            margin-bottom: 8px;
+        }
+
+        .title p {
+            color: #94a3b8;
+        }
+
+        .quick-tools {
+            display: flex;
+            gap: 12px;
+        }
+
+        .tool-btn {
+            width: 58px;
+            height: 58px;
+            border: none;
+            border-radius: 50%;
+            background: #1e293b;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: #2563eb;
+            transform: translateY(-3px);
+        }
+
+        .icon {
+            width: 28px;
+            height: 28px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 24px;
+        }
+
+        .panel {
+            background: #1e293b;
+            border-radius: 22px;
+            padding: 20px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+        }
+
+        .camera-box {
+            position: relative;
+            overflow: hidden;
+            border-radius: 18px;
+            background: black;
+        }
+
+        #video {
+            width: 100%;
+            display: block;
+        }
+
+        .camera-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .action-btn {
+            flex: 1;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+        }
+
+        .capture-btn {
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+        }
+
+        .switch-btn {
+            background: #334155;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .result-box {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .result-card {
+            background: #0f172a;
+            border-radius: 18px;
+            padding: 18px;
+            min-height: 180px;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        .result-text {
+            font-size: 18px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        #translation-result {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        @media(max-width:950px) {
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .title-wrap {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="title-wrap">
+
+            <div class="title">
+                <h1>High Translator</h1>
+                <p>카메라 OCR 실시간 번역 시스템</p>
+            </div>
+
+            <div class="quick-tools">
+
+                <!-- 메인화면 -->
+                <button class="tool-btn" onclick="location.href='/'">
+                    T
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="main-grid">
+
+            <!-- 카메라 -->
+            <div class="panel">
+
+                <div class="panel-title">
+                    Camera OCR
+                </div>
+
+                <div class="camera-box">
+                    <video id="video" autoplay playsinline></video>
+                </div>
+
+                <canvas id="canvas" style="display:none;"></canvas>
+
+                <div class="camera-buttons">
+
+                    <button class="action-btn capture-btn" id="capture">
+                        텍스트 인식
+                    </button>
+
+                    <button class="action-btn switch-btn" id="switch">
+                        카메라 전환
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- 결과 -->
+            <div class="panel">
+
+                <div class="panel-title">
+                    Translation Result
+                </div>
+
+                <div class="result-box">
+
+                    <div class="result-card">
+                        <div class="result-label">
+                            OCR 결과
+                        </div>
+
+                        <div class="result-text" id="result">
+                            인식된 텍스트가 표시됩니다.
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">
+                            번역 결과
+                        </div>
+
+                        <div class="result-text" id="translation-result">
+                            번역 결과가 표시됩니다.
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+
+        const result = document.getElementById("result");
+        const transResult = document.getElementById("translation-result");
+
+        const ctx = canvas.getContext("2d");
+
+        let currentStream = null;
+        let useRearCamera = true;
+
+        function startCamera() {
+
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: useRearCamera ? "environment" : "user",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            })
+                .then(stream => {
+                    currentStream = stream;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    alert("카메라 실행 실패");
+                    console.error(err);
+                });
+
+        }
+
+        startCamera();
+
+        document.getElementById("switch").onclick = () => {
+            useRearCamera = !useRearCamera;
+            startCamera();
+        };
+
+        document.getElementById("capture").onclick = async () => {
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            result.innerText = "텍스트 분석 중...";
+            transResult.innerText = "번역 중...";
+
+            try {
+
+                const { data: { text } } =
+                    await Tesseract.recognize(canvas, 'eng');
+
+                const cleanedText =
+                    text.replace(/\n/g, ' ').trim();
+
+                result.innerText =
+                    cleanedText || "텍스트를 찾지 못했습니다.";
+
+                if (!cleanedText) return;
+
+                const response =
+                    await fetch("/api/translate", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            text: cleanedText
+                        })
+                    });
+
+                const data = await response.json();
+
+                if (data.status === "ok") {
+                    transResult.innerText = data.translated;
+                }
+                else {
+                    transResult.innerText =
+                        "번역 실패 : " + data.message;
+                }
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                result.innerText =
+                    "오류 발생";
+
+                transResult.innerText =
+                    err.message;
+
+            }
+
+        };
+
+    </script>
+
+</body>
+
+</html>
